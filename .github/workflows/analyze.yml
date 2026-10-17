@@ -1,0 +1,30 @@
+name: Load data and run SQL analysis
+
+on:
+  push:
+    branches: [main]
+    paths: ["sql/**", "*.py", ".github/workflows/analyze.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download BTS data and build the database
+        run: python load_data.py
+      - name: Run every query
+        run: python run_queries.py
+      - name: Commit report
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add results/REPORT.md
+          git diff --cached --quiet || git commit -m "Update analysis report"
+          git push
